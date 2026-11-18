@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic Active Learning — Отчет</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Unbounded:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --border-light: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.7;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Unbounded', sans-serif;
+            line-height: 1.2;
+        }
+
+        /* Навигация */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(248, 250, 252, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-light);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        nav {
+            width: 100%; /* Убираем max-width, теперь навигация на весь экран */
+            margin: 0; /* Убираем центрирование */
+            display: flex;
+            justify-content: space-between; /* Распределяем вкладки равномерно по всей ширине */
+            gap: 10px;
+            padding: 15px 40px; /* Добавляем отступы по краям, чтобы вкладки не прилипали */
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 13.5px; /* Чуть увеличили шрифт, так как места стало больше */
+            transition: color 0.3s;
+            position: relative;
+            padding: 5px 10px; /* Добавили отступы для удобного клика */
+            border-radius: 6px;
+        }
+
+        nav a:hover, nav a.active {
+            color: var(--text-main);
+        }
+
+        nav a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent-blue);
+            transition: width 0.3s;
+        }
+
+        nav a.active::after, nav a:hover::after {
+            width: 100%;
+        }
+
+        /* Секции */
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 120px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Главная */
+        .hero-title {
+            font-size: clamp(40px, 7vw, 80px);
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(20px, 3vw, 32px);
+            color: var(--text-muted);
+            max-width: 900px;
+            font-weight: 300;
+            margin-bottom: 40px;
+        }
+
+        .hero-desc {
+            font-size: 20px;
+            max-width: 800px;
+            color: var(--text-main);
+            margin-bottom: 20px;
+        }
+
+        .hero-list {
+            list-style: none;
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .hero-list li {
+            font-size: 17px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .hero-list li::before {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+        }
+
+        /* EDA Секция */
+        .section-title {
+            font-size: 48px;
+            margin-bottom: 40px;
+            border-bottom: 2px solid var(--border-light);
+            padding-bottom: 20px;
+        }
+
+        /* Статистика (Цифры) */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 80px;
+        }
+
+        .stat-item h3 {
+            font-size: 64px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+
+        .stat-item p {
+            font-size: 16px;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-detail {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 5px;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        /* Текст и списки */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 60px;
+        }
+
+        @media (max-width: 900px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .content-block h4 {
+            font-family: 'Unbounded', sans-serif;
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: var(--text-main);
+        }
+
+        .content-block p {
+            font-size: 17px;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .content-block ul {
+            list-style: none;
+        }
+
+        .content-block ul li {
+            font-size: 17px;
+            margin-bottom: 12px;
+            padding-left: 20px;
+            position: relative;
+            color: var(--text-muted);
+        }
+
+        .content-block ul li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent-purple);
+            font-weight: bold;
+        }
+
+        /* Примеры дублей */
+        .duplicates-list {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 20px;
+            border-left: 4px solid var(--accent-orange);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+            margin-bottom: 60px;
+        }
+
+        .duplicates-list h4 {
+            margin-bottom: 25px;
+            font-size: 20px;
+        }
+
+        .duplicates-list ul {
+            list-style: none;
+            display: grid;
+            gap: 15px;
+        }
+
+        .duplicates-list li {
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed var(--border-light);
+            padding-bottom: 10px;
+        }
+
+        .duplicates-list li:last-child {
+            border-bottom: none;
+        }
+
+        .dup-word {
+            font-family: monospace;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: var(--text-main);
+        }
+
+        /* Выводы */
+        .conclusions {
+            display: grid;
+            gap: 30px;
+        }
+
+        .conclusion-item {
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .conclusion-num {
+            font-family: 'Unbounded', sans-serif;
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--border-light);
+            line-height: 1;
+        }
+
+        .conclusion-text h4 {
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .conclusion-text p {
+            font-size: 17px;
+            color: var(--text-muted);
+        }
+
+        /* Заглушки */
+        .placeholder-section {
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        /* Анимация появления */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+                /* Стили для блока с тремя картинками */
+        .three-images {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin: 60px 0;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .three-images { grid-template-columns: 1fr; }
+        }
+        .image-card { text-align: center; }
+        .image-card svg {
+            width: 100%;
+            height: auto;
+            max-height: 220px;
+            margin-bottom: 20px;
+        }
+        .image-card h4 {
+            font-family: 'Unbounded', sans-serif;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .image-card p {
+            font-size: 15px;
+            color: var(--text-muted);
+            text-align: left;
+        }
+        .metric-box {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 20px;
+            margin-top: 40px;
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+        }
+        @media (max-width: 900px) {
+            .metric-box { flex-direction: column; }
+        }
+        .metric-box img {
+            max-width: 450px;
+            width: 100%;
+            border-radius: 10px;
+        }
+        .metric-text h4 { margin-bottom: 15px; font-size: 22px; }
+        .metric-text p { font-size: 16px; color: var(--text-muted); margin-bottom: 12px; }
+
+                /* Стили для таблиц без рамок */
+        .clean-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            font-size: 16px;
+        }
+        .clean-table th {
+            text-align: left;
+            padding: 15px 10px;
+            border-bottom: 2px solid var(--text-main);
+            color: var(--text-main);
+            font-weight: 600;
+        }
+        .clean-table td {
+            padding: 15px 10px;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-muted);
+        }
+        .clean-table tr:hover td {
+            background-color: #f1f5f9;
+        }
+        .highlight-td {
+            font-weight: 600;
+            color: var(--text-main) !important;
+        }
+
+                /* Стили для списка метрик */
+        .metrics-list {
+            display: grid;
+            gap: 30px;
+            margin-top: 40px;
+        }
+        .metric-row {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 30px;
+            align-items: baseline;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 30px;
+        }
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+        @media (max-width: 800px) {
+            .metric-row { grid-template-columns: 1fr; gap: 10px; }
+        }
+        .metric-name {
+            font-family: 'Unbounded', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        .metric-desc {
+            font-size: 17px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+        .metric-formula {
+            display: inline-block;
+            font-family: monospace;
+            background: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: var(--accent-blue);
+            margin-top: 8px;
+        }
+        .primary-metric {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 20px;
+            margin-top: 60px;
+            border-left: 4px solid var(--accent-blue);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+        }
+        .primary-metric h3 {
+            font-family: 'Unbounded', sans-serif;
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: var(--accent-blue);
+        }
+        .primary-metric p {
+            font-size: 17px;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+                /* Стили для широких таблиц */
+        .table-wrapper {
+            overflow-x: auto;
+            width: 100%;
+            margin: 30px 0;
+            padding-bottom: 10px;
+        }
+        .table-wrapper .clean-table {
+            min-width: 1000px;
+        }
+        .mean-row td {
+            font-weight: 700;
+            color: var(--text-main) !important;
+            background-color: #f8fafc;
+            border-top: 2px solid var(--text-main);
+            border-bottom: 2px solid var(--text-main);
+        }
+
+                /* Стили для списка тулзов */
+        .tool-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 40px;
+        }
+        .tool-item {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 40px;
+            align-items: start;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .tool-item:last-child { border-bottom: none; }
+        @media (max-width: 800px) { .tool-item { grid-template-columns: 1fr; gap: 10px; } }
+        
+        .tool-name-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .tool-name {
+            font-family: 'Unbounded', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+            word-break: break-all;
+        }
+        .tool-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            width: fit-content;
+        }
+        .badge-tech { background: #e0f2fe; color: #0284c7; }
+        .badge-gen { background: #f3e8ff; color: #7e22ce; }
+        .badge-act { background: #dcfce7; color: #15803d; }
+
+        .tool-desc {
+            font-size: 16px;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+        .tool-desc strong {
+            color: var(--text-main);
+        }
+        .tool-desc span.agent-think {
+            display: block;
+            margin-top: 8px;
+            padding: 10px 15px;
+            background: #f8fafc;
+            border-left: 3px solid var(--border-light);
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            font-size: 14.5px;
+        }
+
+                /* Стили для логов терминала */
+        .log-box {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 25px;
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin: 30px 0;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        .log-box .log-step { color: #38bdf8; font-weight: bold; margin-top: 15px; display: block; }
+        .log-box .log-thought { color: #94a3b8; font-style: italic; }
+        .log-box .log-call { color: #10b981; }
+        .log-box .log-result { color: #f59e0b; }
+
+        /* Блок с итоговым решением */
+        .decision-box {
+            background: linear-gradient(135deg, #eff6ff, #f8fafc);
+            border-left: 4px solid var(--accent-blue);
+            padding: 40px;
+            border-radius: 20px;
+            margin-top: 60px;
+        }
+        .decision-box h3 {
+            font-family: 'Unbounded', sans-serif;
+            font-size: 24px;
+            color: var(--accent-blue);
+            margin-bottom: 20px;
+        }
+        .decision-box p {
+            font-size: 17px;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+        .decision-box strong { color: var(--text-main); }
+
+                .iter-row td {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        .baseline-row td { background-color: #f8fafc; }
+        .mnrl-row td { background-color: #ecfdf5; } /* Легкий зеленый фон для лучшего результата */
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav>
+            <a href="#home" class="active">Главная</a>
+            <a href="#eda">EDA</a>
+            <a href="#vectorization">Векторизация</a>
+            <a href="#clustering">Кластеризация</a>
+            <a href="#folds">Фолды и сплиты</a>
+            <a href="#metrics">Метрики</a>
+            <a href="#tools">Тулзы агента</a>
+            <a href="#baseline">Baseline</a>
+            <a href="#exp1">Эксперимент 1</a>
+            <a href="#exp2">Эксперимент 2</a>
+            <a href="#exp3">Эксперимент 3</a>
+            <a href="#exp4">Эксперимент 4</a>
+            <a href="#data">Данные</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Главная -->
+        <section id="home">
+            <div class="fade-in">
+                <h1 class="hero-title">Agentic Active Learning</h1>
+                <h2 class="hero-subtitle">Contrastive Learning для дедупликации текстов</h2>
+                <p class="hero-desc">Базовые эмбеддинг-модели находят тематически похожие тексты, но часто ошибаются в их смысле. Например, «Бензин подорожал» и «Бензин подешевел» имеют высокое косинусное сходство, хотя смысл противоположный.</p>
+                
+                <ul class="hero-list">
+                    <li>Цель: научить модель сближать настоящие дубликаты</li>
+                    <li>Цель: раздвигать похожие, но разные по смыслу тексты</li>
+                    <li>Инструменты: LLM-Агент (GigaChat), MNRL, TripletLoss</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- EDA -->
+        <section id="eda">
+            <div class="fade-in">
+                <h2 class="section-title">EDA: Исследование данных</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <h3>15,819</h3>
+                        <p>Всего текстов</p>
+                        <span class="stat-detail">0 пропусков, 0 точных дублей</span>
+                    </div>
+                    <div class="stat-item">
+                        <h3>3.46</h3>
+                        <p>Слов в среднем</p>
+                        <span class="stat-detail">От 1 до 12 слов (26 символов)</span>
+                    </div>
+                    <div class="stat-item">
+                        <h3>156</h3>
+                        <p>Мягких дублей</p>
+                        <span class="stat-detail">Разница в регистре/пробелах</span>
+                    </div>
+                </div>
+
+                <div class="content-grid">
+                    <div class="content-block">
+                        <h4>Анализ длины текстов</h4>
+                        <p><strong>Самый короткий текст:</strong> «общение/приветствие» (1 слово, 19 символов).</p>
+                        <p><strong>Самый длинный текст:</strong> «изменение в парке Ленина: убраны старые горки...» (12 слов, 75 символов).</p>
+                        <p>Тексты очень короткие. Это означает, что модель будет часто ошибаться, так как у нее нет контекста. Слова вроде «уборка» и «снег» будут давать высокое сходство, даже если речь идет о разных событиях.</p>
+                    </div>
+                    <div class="content-block">
+                        <h4>Анализ разметки</h4>
+                        <p>Размечено <strong>5,231 пара</strong> (3,141 уникальный текст).</p>
+                        <p>Все тексты из разметки на 100% присутствуют в основном датасете.</p>
+                        <ul>
+                            <li><strong>3,863</strong> — не дубликаты (73.8%)</li>
+                            <li><strong>1,368</strong> — дубликаты (26.2%)</li>
+                        </ul>
+                        <p>Наблюдается сильный перекос в сторону не-дубликатов. При обучении это нужно учитывать, чтобы модель не выучила правило «все тексты разные».</p>
+                    </div>
+                </div>
+
+                <div class="duplicates-list">
+                    <h4>Примеры мягких дубликатов (требуют склейки):</h4>
+                    <ul>
+                        <li><span class="dup-word">автомобиль мерседес</span> <span>↔</span> <span class="dup-word">автомобиль Мерседес</span></li>
+                        <li><span class="dup-word">Акция Елка желаний</span> <span>↔</span> <span class="dup-word">акция Елка Желаний</span></li>
+                        <li><span class="dup-word">беспилотная и ракетная опасность</span> <span>↔</span> <span class="dup-word">Беспилотная и Ракетная опасность</span></li>
+                        <li><span class="dup-word">беспилотная опасность</span> <span>↔</span> <span class="dup-word">Беспилотная опасность</span></li>
+                        <li><span class="dup-word">блокировка колёс автомобилей без номеров</span> <span>↔</span> <span class="dup-word">Блокировка колёс автомобилей без номеров</span></li>
+                    </ul>
+                </div>
+
+                <div class="conclusions">
+                    <div class="conclusion-item">
+                        <div class="conclusion-num">01</div>
+                        <div class="conclusion-text">
+                            <h4>Проблема коротких текстов</h4>
+                            <p>Средняя длина — 3.46 слова. Модель видит только отдельные слова и не улавливает контекст. Это приводит к огромному количеству ложноположительных срабатываний (False Positives).</p>
+                        </div>
+                    </div>
+                    <div class="conclusion-item">
+                        <div class="conclusion-num">02</div>
+                        <div class="conclusion-text">
+                            <h4>Дисбаланс классов</h4>
+                            <p>В разметке не-дубликатов в 3 раза больше, чем дублей. Для обучения (например, TripletLoss) нам нужно очень внимательно формировать батчи, чтобы позитивных и негативных примеров было поровну.</p>
+                        </div>
+                    </div>
+                    <div class="conclusion-item">
+                        <div class="conclusion-num">03</div>
+                        <div class="conclusion-text">
+                            <h4>Угроза утечки данных</h4>
+                            <p>Наличие 156 мягких дублей означает, что при случайном разбиении на Train/Test одинаковые тексты могут попасть в обе выборки. Это завысит метрики. Необходима группировка (Union-Find) перед разделением.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+                <!-- Векторизация -->
+        <section id="vectorization">
+            <div class="fade-in">
+                <h2 class="section-title">Векторизация текстов</h2>
+                
+                <div class="content-grid" style="margin-bottom: 80px;">
+                    <div class="content-block">
+                        <h4>Модель: intfloat/multilingual-e5-large</h4>
+                        <p>Мы используем одну из лучших мультиязычных моделей на данный момент. Она переводит текст в вектор длиной <strong>1024 числа</strong> (эмбеддинг).</p>
+                        <p><strong>Зачем нужен префикс passage:</strong> Модели семейства E5 обучались особым образом. Им нужно явно указывать, что перед ними документ (passage), а не поисковый запрос (query). Без этого префикса качество эмбеддингов падает.</p>
+                    </div>
+                    <div class="content-block">
+                        <h4>Зачем мы делаем нормализацию?</h4>
+                        <p>Мы используем параметр <code>normalize_embeddings=True</code>. Это приводит длину каждого вектора ровно к 1 (L2-нормализация).</p>
+                        <p><strong>Зачем это нужно:</strong> В таком пространстве косинусное сходство (Cosine Similarity) математически равно скалярному произведению векторов (Dot Product). А считать скалярное произведение в библиотеках (например, в FAISS) в десятки раз быстрее, чем косинусное расстояние. Это критически ускоряет поиск дубликатов.</p>
+                    </div>
+                </div>
+
+                <div class="conclusions">
+                    <div class="conclusion-item">
+                        <div class="conclusion-num">01</div>
+                        <div class="conclusion-text">
+                            <h4>Размерность и скорость</h4>
+                            <p>На выходе мы получаем матрицу размером <strong>[15819, 1024]</strong>. Сохранение её в файл <code>.npy</code> позволяет нам не прогонять тексты через нейросеть каждый раз заново, что экономит часы работы GPU.</p>
+                        </div>
+                    </div>
+                    <div class="conclusion-item">
+                        <div class="conclusion-num">02</div>
+                        <div class="conclusion-text">
+                            <h4>Готовность к кластеризации</h4>
+                            <p>Нормализованные векторы — это идеальное пространство для KMeans и агента. Агент будет искать ближайших соседей (по сути, перемножать векторы), чтобы найти те самые Hard Negatives.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+               <!-- Кластеризация -->
+        <section id="clustering">
+            <div class="fade-in">
+                <h2 class="section-title">Кластеризация и фолды</h2>
+                <p style="font-size: 20px; color: var(--text-muted); max-width: 800px; margin-bottom: 40px;">
+                    Чтобы избежать утечки данных (Data Leakage) и обеспечить честную проверку, мы объединили дубликаты и распределили целые смысловые блоки по 5 фолдам.
+                </p>
+
+                <div class="three-images">
+                    <!-- Шаг 1 -->
+                    <div class="image-card">
+                        <svg viewBox="0 0 200 200">
+                            <circle cx="20" cy="40" r="4" fill="#94a3b8"/><circle cx="50" cy="20" r="4" fill="#94a3b8"/>
+                            <circle cx="80" cy="60" r="4" fill="#94a3b8"/><circle cx="110" cy="30" r="4" fill="#94a3b8"/>
+                            <circle cx="140" cy="50" r="4" fill="#94a3b8"/><circle cx="170" cy="20" r="4" fill="#94a3b8"/>
+                            <circle cx="30" cy="80" r="4" fill="#94a3b8"/><circle cx="60" cy="100" r="4" fill="#94a3b8"/>
+                            <circle cx="90" cy="90" r="4" fill="#94a3b8"/><circle cx="120" cy="110" r="4" fill="#94a3b8"/>
+                            <circle cx="150" cy="80" r="4" fill="#94a3b8"/><circle cx="180" cy="100" r="4" fill="#94a3b8"/>
+                            <circle cx="40" cy="140" r="4" fill="#94a3b8"/><circle cx="80" cy="130" r="4" fill="#94a3b8"/>
+                            <circle cx="110" cy="150" r="4" fill="#94a3b8"/><circle cx="140" cy="130" r="4" fill="#94a3b8"/>
+                            <circle cx="170" cy="160" r="4" fill="#94a3b8"/><circle cx="20" cy="170" r="4" fill="#94a3b8"/>
+                            <circle cx="60" cy="180" r="4" fill="#94a3b8"/><circle cx="100" cy="180" r="4" fill="#94a3b8"/>
+                            <circle cx="150" cy="180" r="4" fill="#94a3b8"/>
+                        </svg>
+                        <h4>1. Исходные тексты</h4>
+                        <p>У нас есть <strong>15,819</strong> текстов. Каждый текст — это точка в 1024-мерном пространстве.</p>
+                    </div>
+
+                    <!-- Шаг 2 -->
+                    <div class="image-card">
+                        <svg viewBox="0 0 200 200">
+                            <ellipse cx="50" cy="40" rx="20" ry="15" stroke="#8b5cf6" stroke-width="2" fill="none" stroke-dasharray="4 4"/>
+                            <circle cx="45" cy="40" r="4" fill="#8b5cf6"/><circle cx="55" cy="42" r="4" fill="#8b5cf6"/>
+                            
+                            <ellipse cx="140" cy="60" rx="25" ry="15" stroke="#8b5cf6" stroke-width="2" fill="none" stroke-dasharray="4 4"/>
+                            <circle cx="130" cy="60" r="4" fill="#8b5cf6"/><circle cx="140" cy="55" r="4" fill="#8b5cf6"/><circle cx="150" cy="65" r="4" fill="#8b5cf6"/>
+
+                            <ellipse cx="80" cy="130" rx="20" ry="15" stroke="#8b5cf6" stroke-width="2" fill="none" stroke-dasharray="4 4"/>
+                            <circle cx="75" cy="130" r="4" fill="#8b5cf6"/><circle cx="85" cy="128" r="4" fill="#8b5cf6"/>
+                            
+                            <circle cx="30" cy="80" r="4" fill="#94a3b8"/><circle cx="110" cy="30" r="4" fill="#94a3b8"/>
+                            <circle cx="170" cy="20" r="4" fill="#94a3b8"/><circle cx="160" cy="140" r="4" fill="#94a3b8"/>
+                        </svg>
+                        <h4>2. Union-Find (Дубли)</h4>
+                        <p>Склеиваем дубли и мягкие дубли. <strong>15,819</strong> текстов сжались до <strong>14,933</strong> групп. Из них <strong>535</strong> групп содержат больше одного текста.</p>
+                    </div>
+
+                    <!-- Шаг 3 -->
+                    <div class="image-card">
+                        <svg viewBox="0 0 200 200">
+                            <circle cx="60" cy="50" r="45" fill="#3b82f6" fill-opacity="0.08" stroke="#3b82f6" stroke-width="2"/>
+                            <circle cx="45" cy="40" r="4" fill="#3b82f6"/><circle cx="55" cy="45" r="4" fill="#3b82f6"/><circle cx="65" cy="35" r="4" fill="#3b82f6"/>
+
+                            <circle cx="140" cy="80" r="45" fill="#10b981" fill-opacity="0.08" stroke="#10b981" stroke-width="2"/>
+                            <circle cx="130" cy="70" r="4" fill="#10b981"/><circle cx="145" cy="75" r="4" fill="#10b981"/><circle cx="150" cy="85" r="4" fill="#10b981"/>
+                            
+                            <circle cx="80" cy="150" r="45" fill="#f59e0b" fill-opacity="0.08" stroke="#f59e0b" stroke-width="2"/>
+                            <circle cx="70" cy="140" r="4" fill="#f59e0b"/><circle cx="85" cy="145" r="4" fill="#f59e0b"/>
+                        </svg>
+                        <h4>3. K-Means (150 кластеров)</h4>
+                        <p>Объединяем группы по смыслу в <strong>150 кластеров</strong>. Это позволяет распределить целые смысловые блоки по фолдам без пересечений.</p>
+                    </div>
+                </div>
+
+                <div class="duplicates-list" style="border-left-color: var(--accent-purple);">
+                    <h4>Примеры объединенных групп (Union-Find):</h4>
+                    <ul>
+                        <li><strong>Группа 17:</strong> <span class="dup-word">рыбная ловля</span> ↔ <span class="dup-word">рыбная добыча</span></li>
+                        <li><strong>Группа 45:</strong> <span class="dup-word">безопасность на горке</span> ↔ <span class="dup-word">безопасность горки</span> ↔ <span class="dup-word">безопасность в зоне тюбинга</span></li>
+                        <li><strong>Группа 128:</strong> <span class="dup-word">трагедия под лёд</span> ↔ <span class="dup-word">Трагедия под лёд</span></li>
+                        <li><strong>Группа 595:</strong> <span class="dup-word">поведение участников дискуссии</span> ↔ <span class="dup-word">поведение участников обсуждения</span></li>
+                        <li><strong>Группа 620:</strong> <span class="dup-word">причины ДТП</span> ↔ <span class="dup-word">причина ДТП</span></li>
+                    </ul>
+                </div>
+
+                <div class="metric-box">
+                    <img src="silhouette.png" alt="Silhouette Score">
+                    <div class="metric-text">
+                        <h4>Почему K-Means (K=150)?</h4>
+                        <p>Мы сравнили алгоритмы: <strong>Agglomerative</strong> дал ужасный Silhouette Score (0.0028), а <strong>HDBSCAN</strong> отправил 52.6% текстов в «шум». K-Means победил, потому что гарантирует 100% покрытие данных.</p>
+                        <p><strong>Что такое Silhouette Score?</strong> Это метрика (от -1 до 1), показывающая, насколько объекты внутри кластера похожи друг на друга и не похожи на другие кластеры. Значение 0.027 — нормальное для коротких текстов, так как их смысловые границы размыты.</p>
+                        <p><strong>Что такое Inertia?</strong> Это сумма квадратов расстояний от точек до центров их кластеров (чем ниже — тем плотнее). Метод локтя показал, что K=150 — оптимальная точка, где Inertia перестает резко падать.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+                <!-- Фолды и сплиты -->
+        <section id="folds">
+            <div class="fade-in">
+                <h2 class="section-title">Разбиение на фолды и сплиты</h2>
+                
+                <p style="font-size: 20px; color: var(--text-muted); max-width: 900px; margin-bottom: 40px;">
+                    Главная задача этого этапа — <strong>исключить утечку данных (Data Leakage)</strong>. Если один и тот же текст (или его дубль) попадет в Train и Test одновременно, модель просто запомнит его, и метрики будут завышены.
+                </p>
+
+                <div class="stats-grid" style="margin-bottom: 60px;">
+                    <div class="stat-item">
+                        <h3>5</h3>
+                        <p>Фолдов</p>
+                        <span class="stat-detail">Сбалансированы по размеру</span>
+                    </div>
+                    <div class="stat-item">
+                        <h3>0%</h3>
+                        <p>Утечек данных</p>
+                        <span class="stat-detail">Все группы целы</span>
+                    </div>
+                    <div class="stat-item">
+                        <h3>1,368</h3>
+                        <p>Проверенных дублей</p>
+                        <span class="stat-detail">Все 100% в одном сплите</span>
+                    </div>
+                </div>
+
+                <div class="content-grid" style="margin-bottom: 40px;">
+                    <div class="content-block">
+                        <h4>Размеры фолдов</h4>
+                        <p>Все 15,819 текстов были равномерно распределены по 5 фолдам. Благодаря жадному алгоритму (самый большой кластер в самый пустой фолд), разница в размерах минимальна.</p>
+                        <table class="clean-table">
+                            <thead>
+                                <tr><th>Фолд</th><th>Количество текстов</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Fold 0</td><td class="highlight-td">3,168</td></tr>
+                                <tr><td>Fold 1</td><td class="highlight-td">3,165</td></tr>
+                                <tr><td>Fold 2</td><td class="highlight-td">3,162</td></tr>
+                                <tr><td>Fold 3</td><td class="highlight-td">3,160</td></tr>
+                                <tr><td>Fold 4</td><td class="highlight-td">3,164</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="content-block">
+                        <h4>Размеры сплитов внутри фолдов</h4>
+                        <p>Каждый фолд делится на Train (обучение), Validation (для агента и анализа ошибок) и Test (отложенная проверка). Пропорции примерно 70% / 15% / 15%.</p>
+                        <table class="clean-table">
+                            <thead>
+                                <tr><th>Fold</th><th>Train</th><th>Val</th><th>Test</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>0</td><td class="highlight-td">2,225</td><td>471</td><td>472</td></tr>
+                                <tr><td>1</td><td class="highlight-td">2,229</td><td>471</td><td>465</td></tr>
+                                <tr><td>2</td><td class="highlight-td">2,215</td><td>474</td><td>473</td></tr>
+                                <tr><td>3</td><td class="highlight-td">2,218</td><td>472</td><td>470</td></tr>
+                                <tr><td>4</td><td class="highlight-td">2,348</td><td>350</td><td>466</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="content-grid">
+                    <div class="content-block">
+                        <h4>Проверка целостности</h4>
+                        <p>Мы прогнали скрипт, который проверил все 1,368 пар размеченных дублей.</p>
+                        <p><strong>Результат:</strong> 1368 из 1368 пар находятся в одном и том же фолде и в одном и том же сплите (<span style="color: var(--accent-green); font-weight: 600;">Все True</span>). Это гарантирует, что модель не подсмотрит ответы во время тестирования.</p>
+                    </div>
+                    <div class="content-block">
+                        <h4>Баланс классов по сплитам (%)</h4>
+                        <p>Разметка сохраняет примерное соотношение дублей и не-дублей во всех выборках.</p>
+                        <table class="clean-table" style="margin-top: 15px;">
+                            <thead>
+                                <tr><th>Сплит</th><th>Дубликаты</th><th>Не дубликаты</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Train</td><td class="highlight-td">42.4%</td><td>57.6%</td></tr>
+                                <tr><td>Validation</td><td class="highlight-td">45.5%</td><td>54.5%</td></tr>
+                                <tr><td>Test</td><td class="highlight-td" style="color: var(--accent-orange) !important;">62.0%</td><td>38.0%</td></tr>
+                            </tbody>
+                        </table>
+                        <p style="font-size: 14px; margin-top: 10px;">* В тесте доля дублей выше (62%), что делает проверку еще более строгой для модели.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+                <!-- Метрики -->
+        <section id="metrics">
+            <div class="fade-in">
+                <h2 class="section-title">Метрики оценки</h2>
+                <p style="font-size: 20px; color: var(--text-muted); max-width: 900px; margin-bottom: 40px;">
+                    После каждой итерации обучения мы должны понять, стало ли эмбеддинговое пространство лучше. Для этого мы используем набор стандартных метрик ранжирования и контрастивного обучения.
+                </p>
+
+                <div class="metrics-list">
+                    <div class="metric-row">
+                        <div class="metric-name">Recall@K</div>
+                        <div class="metric-desc">
+                            Показывает, попал ли настоящий дубль в Топ-K ближайших соседей. Если у текста есть 3 дубля, и хотя бы один из них оказался в Топ-5, то Recall@5 для этого текста равен 1.
+                        </div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-name">Precision@K</div>
+                        <div class="metric-desc">
+                            Показывает, какая доля из Топ-K кандидатов действительно является релевантной (настоящими дублями). Если из 10 ближайших соседей только 2 — дубли, то Precision@10 = 0.2.
+                        </div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-name">MRR</div>
+                        <div class="metric-desc">
+                            Mean Reciprocal Rank. Оценивает, насколько высоко в выдаче находится первый правильный ответ. Если первый дубль стоит на 1-м месте, MRR = 1.0. Если на 3-м, MRR = 1/3.
+                        </div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-name">Hard-negative rate</div>
+                        <div class="metric-desc">
+                            Доля семантически похожих, но неправильных кандидатов (False Positives) в выдаче. Чем ниже этот показатель, тем меньше «мусора» модель предлагает для дедупликации.
+                        </div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-name">Antonym rate</div>
+                        <div class="metric-desc">
+                            Как часто среди ближайших кандидатов появляются противоположные по смыслу тексты (антонимы, отрицания). В нашем датасете мы аппроксимируем это долей `not_duplicate` пар с очень высоким косинусным сходством.
+                        </div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-name">Pos vs Neg similarity</div>
+                        <div class="metric-desc">
+                            Среднее косинусное сходство для дублей (Pos) и для не-дублей (Neg). Идеальная модель должна иметь Pos близкий к 1.0, а Neg — как можно ниже.
+                        </div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-name">Δ качества на итерацию</div>
+                        <div class="metric-desc">
+                            Показывает, насколько изменилась главная метрика после обучения на очередной партии из 400 размеченных примеров. Позволяет понять, когда модель вышла на плато.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="primary-metric">
+                    <h3>Главная метрика: Gap (Разрыв)</h3>
+                    <p>Хотя мы считаем все перечисленные метрики, <strong>за основу мы берем Gap</strong> — разницу между средним сходством позитивных пар и средним сходством негативных пар.</p>
+                    <span class="metric-formula">Gap = Mean(Pos_Sim) - Mean(Neg_Sim)</span>
+                    <p style="margin-top: 15px;"><strong>Почему именно Gap?</strong> Наша задача — это Contrastive Learning. Мы хотим, чтобы модель <i>сближала</i> дубли (Pos_Sim рос) и <i>раздвигала</i> похожие, но разные тексты (Neg_Sim падал). Gap напрямую измеряет этот процесс. Если Gap растет, значит модель учится разделять смыслы. Если мы видим, что Gap на Frozen Set вырос с 0.0475 до 0.1431 — это железное доказательство успеха.</p>
+                </div>
+            </div>
+        </section>
+        
+                <!-- Тулзы агента -->
+        <section id="tools">
+            <div class="fade-in">
+                <h2 class="section-title">Инструменты агента (Tools)</h2>
+                <p style="font-size: 20px; color: var(--text-muted); max-width: 900px; margin-bottom: 40px;">
+                    Агент (GigaChat) не работает вслепую. У него есть API из 15 инструментов. Он сам решает, какой из них вызвать, читает результат и делает выводы. Это разделяет инструменты на три группы: диагностику, поиск данных и действия.
+                </p>
+
+                <div class="tool-list">
+                    <h3 style="font-family: 'Unbounded', sans-serif; font-size: 24px; margin-top: 20px; margin-bottom: 10px; color: var(--accent-blue);">1. Технические тулзы (Диагностика Validation)</h3>
+                    
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">get_confusion_matrix</span>
+                            <span class="tool-badge badge-tech">Техническая</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Возвращает матрицу ошибок (TP, FP, FN) на валидации при пороге 0.85.<br>
+                            <strong>Когда вызывает:</strong> В самом начале итерации.<br>
+                            <strong>Зачем и какой вывод:</strong> Агент смотрит, каких ошибок больше. Если много FP (модель путает разные тексты), он понимает, что нужно искать больше "жестких негативов". Если много FN — нужно искать пропущенные дубли.
+                        </div>
+                    </div>
+
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">get_uncertain_examples</span>
+                            <span class="tool-badge badge-tech">Техническая</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Показывает примеры пар на Validation, где сходство близко к 0.85.<br>
+                            <strong>Когда вызывает:</strong> После матрицы ошибок.<br>
+                            <strong>Зачем и какой вывод:</strong> Чтобы глазами посмотреть, на каких темах модель "плавает". Агент может увидеть, что все ошибки в теме "БПЛА" или "уборка снега".
+                        </div>
+                    </div>
+
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">get_boundary_examples</span>
+                            <span class="tool-badge badge-tech">Техническая</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Ищет пары с косинусным сходством около 0.5 (полная неопределенность).<br>
+                            <strong>Когда вызывает:</strong> Для анализа.<br>
+                            <strong>Зачем и какой вывод:</strong> Понять, какие темы для модели абсолютно не связаны, но могут быть связаны логически.
+                        </div>
+                    </div>
+
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">get_embedding_clusters</span>
+                            <span class="tool-badge badge-tech">Техническая</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Кластеризует тренировочные данные и показывает самые маленькие кластеры.<br>
+                            <strong>Когда вызывает:</strong> В начале итерации.<br>
+                            <strong>Зачем и какой вывод:</strong> Найти редкие темы, которых мало в обучении. Агент понимает: "О, у меня мало данных про экологию, надо поискать пары оттуда".
+                        </div>
+                    </div>
+
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">get_error_clusters</span>
+                            <span class="tool-badge badge-tech">Техническая</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Группирует ошибки модели (FP) по темам.<br>
+                            <strong>Когда вызывает:</strong> Для глубокого анализа.<br>
+                            <strong>Зачем и какой вывод:</strong> Найти системные проблемы (например, "модель ошибается на всех текстах с отрицанием").
+                        </div>
+                    </div>
+
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">get_training_metrics</span>
+                            <span class="tool-badge badge-tech">Техническая</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Показывает динамику метрик (Gap, Recall) с прошлой итерации.<br>
+                            <strong>Когда вызывает:</strong> Со 2-й итерации.<br>
+                            <strong>Зачем и какой вывод:</strong> Оценить, помогло ли предыдущее обучение, или модель деградировала (Catastrophic Forgetting).
+                        </div>
+                    </div>
+
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">get_nearest_train_examples</span>
+                            <span class="tool-badge badge-tech">Техническая</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Для конкретного текста находит Топ-N похожих из Train.<br>
+                            <strong>Когда вызывает:</strong> Точечно.<br>
+                            <strong>Зачем и какой вывод:</strong> Понять, почему модель ошиблась на конкретной паре, посмотрев её "соседей".
+                        </div>
+                    </div>
+
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">get_model_disagreement</span>
+                            <span class="tool-badge badge-tech">Техническая</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Ищет пары, на которых старая и новая версии модели дают разные ответы.<br>
+                            <strong>Когда вызывает:</strong> После обновления модели.<br>
+                            <strong>Зачем и какой вывод:</strong> Проверить, изменилось ли поведение модели на старых данных (сравнение версий).
+                        </div>
+                    </div>
+
+                    <h3 style="font-family: 'Unbounded', sans-serif; font-size: 24px; margin-top: 40px; margin-bottom: 10px; color: var(--accent-purple);">2. Генеративные тулзы (Поиск в Train)</h3>
+                    
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">get_hard_negative_candidates</span>
+                            <span class="tool-badge badge-gen">Генеративная</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Ищет пары с высоким косинусным сходством (> 0.85).<br>
+                            <strong>Когда вызывает:</strong> Главный инструмент поиска.<br>
+                            <strong>Зачем и какой вывод:</strong> Найти "врагов" — тексты, которые модель считает одинаковыми (например, "бензин подорожал" и "подешевел"). Эти пары нужны для обучения раздвижению.
+                        </div>
+                    </div>
+
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">get_uncertain_pairs</span>
+                            <span class="tool-badge badge-gen">Генеративная</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Ищет пары с неопределенным сходством (около 0.85).<br>
+                            <strong>Когда вызывает:</strong> Главный инструмент поиска.<br>
+                            <strong>Зачем и какой вывод:</strong> Найти "серую зону", где модель не уверена. Эти пары дают максимальный прирост при разметке (Active Learning).
+                        </div>
+                    </div>
+
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">get_potential_false_negatives</span>
+                            <span class="tool-badge badge-gen">Генеративная</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Ищет пары с низким сходством (< 0.5), но с общими словами.<br>
+                            <strong>Когда вызывает:</strong> Для поиска пропущенных дублей.<br>
+                            <strong>Зачем и какой вывод:</strong> Найти пары, которые модель ошибочно раздвинула (например, "ДТП" и "авария на дороге"). Их нужно сблизить.
+                        </div>
+                    </div>
+
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">get_new_pattern_pairs</span>
+                            <span class="tool-badge badge-gen">Генеративная</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Берет пары из самых маленьких (редких) кластеров.<br>
+                            <strong>Когда вызывает:</strong> Для диверсификации выборки.<br>
+                            <strong>Зачем и какой вывод:</strong> Чтобы модель не переобучилась на одной теме (например, только на уборке снега), а знала про политику, экономику и т.д.
+                        </div>
+                    </div>
+
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">get_model_disagreement_pairs</span>
+                            <span class="tool-badge badge-gen">Генеративная</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Возвращает пары, на которых модели расходятся во мнениях.<br>
+                            <strong>Когда вызывает:</strong> Для поиска сложных кейсов.<br>
+                            <strong>Зачем и какой вывод:</strong> Найти граничные случаи, которые требуют экспертной разметки Оракула.
+                        </div>
+                    </div>
+
+                    <h3 style="font-family: 'Unbounded', sans-serif; font-size: 24px; margin-top: 40px; margin-bottom: 10px; color: var(--accent-green);">3. Управляющие тулзы (Действия)</h3>
+                    
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">submit_pairs_for_labeling</span>
+                            <span class="tool-badge badge-act">Действие</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Сдает финальный список выбранных пар (до 400 штук).<br>
+                            <strong>Когда вызывает:</strong> После вызова генеративных тулзов.<br>
+                            <strong>Зачем и какой вывод:</strong> Агент фиксирует свой выбор. Скрытый буфер перехватывает тексты, чтобы LLM их не исказила.
+                        </div>
+                    </div>
+
+                    <div class="tool-item">
+                        <div class="tool-name-wrapper">
+                            <span class="tool-name">oracle_label_pairs</span>
+                            <span class="tool-badge badge-act">Действие</span>
+                        </div>
+                        <div class="tool-desc">
+                            <strong>Что делает:</strong> Отправляет выбранные пары GigaChat, чтобы получить метки (дубль / не дубль).<br>
+                            <strong>Когда вызывает:</strong> В самом конце сбора.<br>
+                            <strong>Зачем и какой вывод:</strong> Получить чистые данные для обучения модели.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+                
+        <!-- Baseline -->
+        <section id="baseline">
+            <div class="fade-in">
+                <h2 class="section-title">Baseline: оценка базовой модели</h2>
+                
+                <div class="content-block" style="margin-bottom: 40px;">
+                    <h4>Что такое Baseline?</h4>
+                    <p>Baseline (базовый замер) — это оценка качества модели <code>intfloat/multilingual-e5-large</code> <strong>до какого-либо дообучения</strong>. Мы просто берем стандартную, нетронутую модель, прогоняем через нее наши тестовые данные и считаем метрики.</p>
+                    <p>Это наша отправная точка. Без нее мы не сможем понять, принесло ли наше обучение (Triplet Loss, MNRL, работа агента) хоть какую-то пользу.</p>
+                </div>
+
+                <h4 style="font-family: 'Unbounded', sans-serif; font-size: 20px; margin-bottom: 15px;">Метрики ранжирования на Test-фолдах</h4>
+                <div class="table-wrapper">
+                    <table class="clean-table" style="text-align: center;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Fold</th>
+                                <th>Recall@1</th>
+                                <th>Recall@5</th>
+                                <th>Recall@10</th>
+                                <th>Recall@50</th>
+                                <th>Precision@1</th>
+                                <th>Precision@5</th>
+                                <th>Precision@10</th>
+                                <th>MRR</th>
+                                <th>Pos_Sim</th>
+                                <th>Neg_Sim</th>
+                                <th>Gap</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="text-align: left;">Test F0</td>
+                                <td>0.4583</td><td>0.6667</td><td>0.7083</td><td>0.7083</td>
+                                <td>0.4583</td><td>0.1583</td><td>0.0875</td>
+                                <td>0.5355</td><td>0.9728</td><td>0.9537</td><td class="highlight-td" style="color: var(--accent-orange) !important;">0.0191</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left;">Test F1</td>
+                                <td>0.7273</td><td>0.9091</td><td>0.9091</td><td>0.9091</td>
+                                <td>0.7273</td><td>0.2364</td><td>0.1212</td>
+                                <td>0.8058</td><td>0.9727</td><td>0.9173</td><td class="highlight-td" style="color: var(--accent-orange) !important;">0.0553</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left;">Test F2</td>
+                                <td>0.6842</td><td>0.7368</td><td>0.7368</td><td>0.7368</td>
+                                <td>0.6842</td><td>0.1895</td><td>0.0947</td>
+                                <td>0.7111</td><td>0.9878</td><td>0.9725</td><td class="highlight-td" style="color: var(--accent-orange) !important;">0.0153</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left;">Test F3</td>
+                                <td>0.7105</td><td>0.8158</td><td>0.8684</td><td>0.8684</td>
+                                <td>0.7105</td><td>0.2421</td><td>0.1289</td>
+                                <td>0.7586</td><td>0.9764</td><td>0.9352</td><td class="highlight-td" style="color: var(--accent-orange) !important;">0.0412</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left;">Test F4</td>
+                                <td>0.5455</td><td>0.7273</td><td>0.7576</td><td>0.7576</td>
+                                <td>0.5455</td><td>0.1515</td><td>0.0848</td>
+                                <td>0.6293</td><td>0.9728</td><td>0.9570</td><td class="highlight-td" style="color: var(--accent-orange) !important;">0.0159</td>
+                            </tr>
+                            <tr class="mean-row">
+                                <td style="text-align: left;">Mean</td>
+                                <td>0.6252</td><td>0.7711</td><td>0.7961</td><td>0.7961</td>
+                                <td>0.6252</td><td>0.1956</td><td>0.1034</td>
+                                <td>0.6881</td><td>0.9765</td><td>0.9471</td><td class="highlight-td" style="color: var(--accent-orange) !important;">0.0294</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="conclusions" style="margin-top: 60px;">
+                    <div class="conclusion-item">
+                        <div class="conclusion-num">01</div>
+                        <div class="conclusion-text">
+                            <h4>Проблема: Высокое сходство для всего</h4>
+                            <p>Обрати внимание на колонки <strong>Pos_Sim (0.9765)</strong> и <strong>Neg_Sim (0.9471)</strong>. Базовая модель считает, что почти все тексты в датасете очень похожи друг на друга (сходство выше 0.94). Для коротких текстов это настоящая катастрофа.</p>
+                        </div>
+                    </div>
+                    <div class="conclusion-item">
+                        <div class="conclusion-num">02</div>
+                        <div class="conclusion-text">
+                            <h4>Крошечный Gap (0.0294)</h4>
+                            <p>Разница между настоящими дублями и просто похожими текстами составляет всего <strong>2.9%</strong>. Из-за этого метрики ранжирования (Recall@1, MRR) очень низкие: модель ставит на первое место случайные тексты, которые просто имеют общие слова.</p>
+                        </div>
+                    </div>
+                    <div class="conclusion-item">
+                        <div class="conclusion-num">03</div>
+                        <div class="conclusion-text">
+                            <h4>Зачем нам дообучение?</h4>
+                            <p>Нам нужно "раздвинуть" пространство. Наша цель — сохранить <code>Pos_Sim</code> на уровне ~0.95, но обрушить <code>Neg_Sim</code> до ~0.80. Только когда <code>Gap</code> вырастет (например, до 0.10–0.15), модель начнет понимать смысл, а не просто совпадение слов. Именно для этого мы будем использовать Triplet Loss, MNRL и нашего агента.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+                <!-- Эксперимент 1 -->
+        <section id="exp1">
+            <div class="fade-in">
+                <h2 class="section-title">Эксперимент 1: Triplet Loss vs MNRL</h2>
+                
+                <div class="content-block" style="margin-bottom: 50px;">
+                    <h4>Логика и настройка агента</h4>
+                    <p>Для первого эксперимента мы настроили агента (GigaChat) на четкую последовательность действий. Мы убрали из промпта тулзы-заглушки (которые возвращали фейковые данные), чтобы агент работал только с реальными инструментами.</p>
+                    <p>Мы жестко задали ему алгоритм: сначала диагностика (4 технические тулзы), затем поиск (5 генеративных тулзов), затем сдача 400 пар и запуск Оракула для разметки.</p>
+                </div>
+
+                <h4 style="font-family: 'Unbounded', sans-serif; font-size: 20px; margin-bottom: 15px;">Пример логирования мыслей агента</h4>
+                <p style="color: var(--text-muted); margin-bottom: 15px;">Агент не просто вызывал функции, он "думал" перед каждым шагом, что позволяет нам контролировать процесс:</p>
+                
+                <div class="log-box">
+<span class="log-step">Шаг агента 1</span>
+<span class="log-thought">Мысли агента: &lt;invoke name="get_confusion_matrix"&gt;&lt;/invoke&gt;...</span>
+<span class="log-call">Вызов тулзы: get_confusion_matrix с аргументами {}</span>
+<span class="log-result">Результат тулзы: Матрица ошибок: TP: 10, FP: 5, FN: 2. Модель путает похожие тексты....</span>
+
+<span class="log-step">Шаг агента 4</span>
+<span class="log-thought">Мысли агента: &lt;invoke name="get_hard_negative_candidates"&gt;&lt;parameter name="n"&gt;100&lt;/parameter&gt;&lt;/invoke&gt;...</span>
+<span class="log-call">Вызов тулзы: get_hard_negative_candidates с аргументами {'n': 100}</span>
+<span class="log-result">Результат тулзы: [{"text_1": "сотрудничество китайцев и вьетнамцев в торговле", "text_2": "место/ситуация"}...</span>
+
+<span class="log-step">Шаг агента 9</span>
+<span class="log-thought">Мысли агента: &lt;invoke name="submit_pairs_for_labeling"&gt;&lt;parameter name="pairs"&gt;[]&lt;/parameter&gt;&lt;/invoke&gt;...</span>
+<span class="log-call">Вызов тулзы: submit_pairs_for_labeling с аргументами {'pairs': []}</span>
+<span class="log-result">Результат тулзы: Принято 400 пар из буфера....</span>
+
+<span class="log-step">Шаг агента 10</span>
+<span class="log-thought">Мысли агента: &lt;invoke name="oracle_label_pairs"&gt;&lt;/invoke&gt;...</span>
+<span class="log-call">Вызов тулзы: oracle_label_pairs с аргументами {}</span>
+<span class="log-result">Результат тулзы: Разметка завершена. Дубликатов: 46, Не-дубликатов: 354...</span>
+</div>
+
+                <h3 style="font-family: 'Unbounded', sans-serif; font-size: 26px; margin-top: 60px; margin-bottom: 20px;">Часть 1: Triplet Loss (Базовый замер)</h3>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">Мы обучили модель на 46 парах дублей, используя классический Triplet Loss (Anchor, Positive, Negative). Результат на тестовых фолдах:</p>
+                
+                <div class="table-wrapper">
+                    <table class="clean-table" style="text-align: center;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Fold</th>
+                                <th>Recall@1</th><th>Recall@5</th><th>Recall@10</th><th>Recall@50</th>
+                                <th>Precision@1</th><th>Precision@5</th><th>Precision@10</th>
+                                <th>MRR</th><th>Pos_Sim</th><th>Neg_Sim</th><th>Gap</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td style="text-align: left;">Test F0</td><td>0.4583</td><td>0.6667</td><td>0.7083</td><td>0.7083</td><td>0.4583</td><td>0.1583</td><td>0.0875</td><td>0.5355</td><td>0.9728</td><td>0.9536</td><td class="highlight-td">0.0192</td></tr>
+                            <tr><td style="text-align: left;">Test F1</td><td>0.7273</td><td>0.9091</td><td>0.9091</td><td>0.9091</td><td>0.7273</td><td>0.2364</td><td>0.1212</td><td>0.8058</td><td>0.9726</td><td>0.9173</td><td class="highlight-td">0.0554</td></tr>
+                            <tr><td style="text-align: left;">Test F2</td><td>0.6842</td><td>0.7368</td><td>0.7368</td><td>0.7368</td><td>0.6842</td><td>0.1895</td><td>0.0947</td><td>0.7111</td><td>0.9878</td><td>0.9725</td><td class="highlight-td">0.0153</td></tr>
+                            <tr><td style="text-align: left;">Test F3</td><td>0.7105</td><td>0.8158</td><td>0.8684</td><td>0.8684</td><td>0.7105</td><td>0.2421</td><td>0.1289</td><td>0.7586</td><td>0.9764</td><td>0.9351</td><td class="highlight-td">0.0413</td></tr>
+                            <tr><td style="text-align: left;">Test F4</td><td>0.5455</td><td>0.7273</td><td>0.7576</td><td>0.7576</td><td>0.5455</td><td>0.1515</td><td>0.0848</td><td>0.6344</td><td>0.9728</td><td>0.9569</td><td class="highlight-td">0.0159</td></tr>
+                            <tr class="mean-row"><td style="text-align: left;">Mean</td><td>0.6252</td><td>0.7711</td><td>0.7961</td><td>0.7961</td><td>0.6252</td><td>0.1956</td><td>0.1034</td><td>0.6891</td><td>0.9765</td><td>0.9471</td><td class="highlight-td">0.0294</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p style="color: var(--text-muted); font-size: 15px;"><strong>Вывод:</strong> Triplet Loss почти не изменил ситуацию. Средний Gap остался на уровне 0.0294. Модель не смогла сдвинуть негативы (Neg_Sim остался высоким — 0.9471), потому что 46 пар — это слишком мало для 500M-параметров модели. Нам нужна более агрессивная функция потерь.</p>
+
+
+                <h3 style="font-family: 'Unbounded', sans-serif; font-size: 26px; margin-top: 60px; margin-bottom: 20px;">Часть 2: MultipleNegativesRankingLoss (MNRL)</h3>
+                <p style="color: var(--text-muted); margin-bottom: 20px;">В соответствии с планом, мы заменили функцию потерь на MNRL. Она использует все остальные тексты в батче как негативы, что дает модели гораздо больше сигнала для обучения. Мы провели перебор батчей, чтобы найти оптимальный:</p>
+
+                <table class="clean-table" style="max-width: 600px;">
+                    <thead>
+                        <tr><th>Batch Size</th><th>Gap после обучения</th><th>Комментарий</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>16</td><td class="highlight-td">0.1400</td><td>Хороший результат, стабильное обучение.</td></tr>
+                        <tr><td>32</td><td class="highlight-td" style="color: var(--accent-green) !important;">0.1430</td><td>Лучший результат. Идеальный баланс.</td></tr>
+                        <tr><td>64</td><td class="highlight-td" style="color: var(--accent-orange) !important;">0.0800</td><td>Просадка. Слишком большой батч.</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="content-grid" style="margin-top: 30px;">
+                    <div class="content-block">
+                        <h4>Почему мы не пошли выше 64?</h4>
+                        <p><strong>1. Лимит памяти (T4):</strong> Модель e5-large тяжелая. При попытке поставить батч 128 или 256, видеопамять (15 ГБ) переполняется, и Colab выдает ошибку <code>OutOfMemoryError</code>. Обучение физически невозможно.</p>
+                    </div>
+                    <div class="content-block">
+                        <h4>Почему батч 64 дал худший результат?</h4>
+                        <p><strong>2. Природа MNRL:</strong> Эта функция потерь использует другие элементы в батче как негативы. У нас всего 46 позитивных пар. Если мы ставим батч 64, то весь наш датасет помещается в один батч. Негативов почти не остается, и функция теряет смысл. Батч 32 — золотая середина.</p>
+                    </div>
+                </div>
+
+                <h4 style="font-family: 'Unbounded', sans-serif; font-size: 20px; margin-top: 50px; margin-bottom: 15px;">Итоговая таблица MNRL (Batch Size 32)</h4>
+                <div class="table-wrapper">
+                    <table class="clean-table" style="text-align: center;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Fold</th>
+                                <th>Recall@1</th><th>Recall@5</th><th>Recall@10</th><th>Recall@50</th>
+                                <th>Precision@1</th><th>Precision@5</th><th>Precision@10</th>
+                                <th>MRR</th><th>Pos_Sim</th><th>Neg_Sim</th><th>Gap</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td style="text-align: left;">Test F0</td><td>0.7083</td><td>0.7500</td><td>0.7500</td><td>0.7500</td><td>0.7083</td><td>0.1833</td><td>0.0917</td><td>0.7228</td><td>0.9387</td><td>0.8516</td><td class="highlight-td">0.0871</td></tr>
+                            <tr><td style="text-align: left;">Test F1</td><td>0.6667</td><td>0.9091</td><td>0.9091</td><td>0.9091</td><td>0.6667</td><td>0.2424</td><td>0.1212</td><td>0.7704</td><td>0.9367</td><td>0.7326</td><td class="highlight-td">0.2041</td></tr>
+                            <tr><td style="text-align: left;">Test F2</td><td>0.6316</td><td>0.7368</td><td>0.7368</td><td>0.7368</td><td>0.6316</td><td>0.1895</td><td>0.0947</td><td>0.6716</td><td>0.9741</td><td>0.9348</td><td class="highlight-td">0.0394</td></tr>
+                            <tr><td style="text-align: left;">Test F3</td><td>0.7105</td><td>0.8947</td><td>0.8947</td><td>0.8947</td><td>0.7105</td><td>0.2579</td><td>0.1368</td><td>0.7831</td><td>0.9509</td><td>0.7539</td><td class="highlight-td">0.1970</td></tr>
+                            <tr><td style="text-align: left;">Test F4</td><td>0.5152</td><td>0.7273</td><td>0.7576</td><td>0.7576</td><td>0.5152</td><td>0.1515</td><td>0.0848</td><td>0.6268</td><td>0.9455</td><td>0.8998</td><td class="highlight-td">0.0457</td></tr>
+                            <tr class="mean-row"><td style="text-align: left;">Mean</td><td>0.6465</td><td>0.8036</td><td>0.8096</td><td>0.8096</td><td>0.6465</td><td>0.2049</td><td>0.1059</td><td>0.7149</td><td>0.9492</td><td>0.8345</td><td class="highlight-td" style="color: var(--accent-green) !important;">0.1146</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="decision-box">
+                    <h3>Ключевое решение: MNRL</h3>
+                    <p>Сравнив две таблицы, мы видим колоссальную разницу. Triplet Loss дал средний Gap <strong>0.0294</strong>, а MNRL (с батчем 32) разогнал его до <strong>0.1146</strong> (почти в 4 раза выше).</p>
+                    <p>MNRL заставил модель реально раздвинуть негативы: <code>Neg_Sim</code> упал с 0.9471 до 0.8345, при этом <code>Pos_Sim</code> остался высоким. Метрика ранжирования <strong>MRR выросла с 0.6891 до 0.7149</strong>, а Recall@1 увеличился.</p>
+                    <p><strong>Наше решение:</strong> Мы полностью отказываемся от Triplet Loss для дальнейших экспериментов. Все последующие итерации (с агентом, порогами и Replay Buffer) будут использовать только <strong>MNRL с размером батча 32</strong>.</p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Эксперимент 2 (Заглушка) -->
+        <section id="exp2" class="placeholder-section" style="min-height: 50vh;">
+            <h2 class="section-title">Эксперимент 2</h2>
+            <p>Здесь будут результаты работы агента-оркестратора и порогов (в разработке).</p>
+        </section>
+
+        <!-- Эксперимент 3 (Заглушка) -->
+        <section id="exp3" class="placeholder-section" style="min-height: 50vh;">
+            <h2 class="section-title">Эксперимент 3</h2>
+            <p>Здесь будут результаты Replay Buffer и защиты от Catastrophic Forgetting (в разработке).</p>
+        </section>
+
+        <!-- Эксперимент 4: Embedding Space -->
+        <section id="exp4">
+            <div class="fade-in">
+                <h2 class="section-title">Эксперимент 4: Замороженный Embedding Space</h2>
+                
+                <div class="content-grid" style="margin-bottom: 50px;">
+                    <div class="content-block">
+                        <h4>Что это такое и зачем он нужен?</h4>
+                        <p>Чтобы объективно оценивать, как меняется модель от итерации к итерации, мы создали <strong>Замороженный набор (Frozen Set)</strong>.</p>
+                        <p>Мы взяли <strong>1000 случайных пар</strong> из тренировочного пула (ровно 500 настоящих дубликатов и 500 не-дубликатов). Этот набор <strong>никогда не участвует в обучении</strong>. Мы просто прогоняем через него модель после каждой итерации и смотрим на изменение Gap.</p>
+                    </div>
+                    <div class="content-block">
+                        <h4>Почему нельзя смотреть только на Test?</h4>
+                        <p>Test-фолды показывают обобщающую способность на новых темах. Но Test-выборки маленькие (от 19 до 38 пар с дублями). Из-за этого метрики на них могут сильно скакать (шум).</p>
+                        <p>Замороженный набор дает стабильную, чистую картину именно в том семантическом пространстве, которое мы пытаемся обучить.</p>
+                    </div>
+                </div>
+
+                <h4 style="font-family: 'Unbounded', sans-serif; font-size: 20px; margin-bottom: 15px;">Динамика Gap на замороженных 1000 парах</h4>
+                <table class="clean-table" style="max-width: 800px; text-align: center;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left;">Итерация / Модель</th>
+                            <th>Gap (до обучения)</th>
+                            <th>Gap (после обучения)</th>
+                            <th>Прирост (Δ)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="baseline-row">
+                            <td style="text-align: left;">Baseline (e5-large)</td>
+                            <td>—</td>
+                            <td class="highlight-td">0.0475</td>
+                            <td>—</td>
+                        </tr>
+                        <tr class="iter-row">
+                            <td style="text-align: left;">Triplet Loss (400 пар)</td>
+                            <td>0.0475</td>
+                            <td>0.0476</td>
+                            <td style="color: var(--text-muted);">+0.0001</td>
+                        </tr>
+                        <tr class="mnrl-row">
+                            <td style="text-align: left;">MNRL Batch 32 (400 пар)</td>
+                            <td>0.0475</td>
+                            <td class="highlight-td" style="color: var(--accent-green) !important;">0.1431</td>
+                            <td style="color: var(--accent-green); font-weight: 700;">+0.0956</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="content-block" style="margin-top: 40px;">
+                    <p style="font-size: 17px; color: var(--text-muted);">
+                        <em>* Таблица будет дополняться по мере проведения следующих итераций (Эксперименты 2 и 3). Выводы по динамике Embedding Space будут сформулированы после завершения всех запланированных этапов.</em>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Данные -->
+        <section id="data" class="placeholder-section">
+            <h2 class="section-title">Данные</h2>
+            <p>Здесь будут ссылки на скачивание датасетов и моделей.</p>
+        </section>
+    </main>
+
+    <script>
+                // Плавная прокрутка и подсветка меню
+        const sections = document.querySelectorAll("section");
+        const navLi = document.querySelectorAll("nav a");
+
+        window.addEventListener("scroll", () => {
+            let current = "";
+            sections.forEach((section) => {
+                const sectionTop = section.offsetTop;
+                // Отнимаем 150 пикселей (высота шапки + запас)
+                if (pageYOffset >= sectionTop - 150) {
+                    current = section.getAttribute("id");
+                }
+            });
+
+            navLi.forEach((a) => {
+                a.classList.remove("active");
+                // ЖЕСТКОЕ СОВПАДЕНИЕ (чтобы exp2 не подсвечивал exp3 и exp4)
+                if (a.getAttribute("href") === "#" + current) {
+                    a.classList.add("active");
+                }
+            });
+        });
+
+        // Анимация появления элементов при скролле
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-in').forEach((el) => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
